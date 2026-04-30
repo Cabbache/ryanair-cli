@@ -1,0 +1,27 @@
+# deps + build output
+node_modules
+dist
+packages/*/dist
+*.tsbuildinfo
+
+# bun / npm noise
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+bun-debug.log*
+
+# debug logs from --debug runs
+debug.log
+*.debug.log
+
+# env / secrets
+.env
+.env.*
+
+# editor / OS
+.DS_Store
+.idea
+.vscode
+*.swp
+*~
