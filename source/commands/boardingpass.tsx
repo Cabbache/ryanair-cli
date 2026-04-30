@@ -88,7 +88,9 @@ export default function BoardingPassCommand({pnr, logger}: Props) {
 	if (stage.kind === 'notFound') {
 		return (
 			<Box flexDirection="column">
-				<Text color="yellow">No boarding pass yet for {pnr.toUpperCase()}.</Text>
+				<Text color="yellow">
+					No boarding pass yet for {pnr.toUpperCase()}.
+				</Text>
 				<Text dimColor>{stage.message}</Text>
 			</Box>
 		);

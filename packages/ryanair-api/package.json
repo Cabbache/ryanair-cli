@@ -12,7 +12,10 @@
 			"import": "./dist/index.js"
 		}
 	},
-	"files": ["dist", "source"],
+	"files": [
+		"dist",
+		"source"
+	],
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsc --watch"

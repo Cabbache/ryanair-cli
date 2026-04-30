@@ -10,6 +10,12 @@ import {loadStore, type Store} from '../store.js';
 
 type Props = {
 	logger?: Logger;
+	/**
+	 * - `'upcoming'` (default): server filter `active=true`.
+	 * - `'past'`: server filter `active=false`.
+	 * - `'all'`: omit the `active` parameter entirely.
+	 */
+	filter?: 'upcoming' | 'past' | 'all';
 };
 
 type Stage =
@@ -18,7 +24,7 @@ type Stage =
 	| {kind: 'unauthenticated'}
 	| {kind: 'ok'; bookings: FlightBooking[]};
 
-export default function FlightsCommand({logger}: Props) {
+export default function FlightsCommand({logger, filter = 'upcoming'}: Props) {
 	const {exit} = useApp();
 	const [stage, setStage] = useState<Stage>({kind: 'loading'});
 
@@ -28,7 +34,10 @@ export default function FlightsCommand({logger}: Props) {
 			try {
 				store = await loadStore();
 			} catch (err) {
-				setStage({kind: 'error', message: `Could not read session: ${(err as Error).message}`});
+				setStage({
+					kind: 'error',
+					message: `Could not read session: ${(err as Error).message}`,
+				});
 				return;
 			}
 
@@ -37,7 +46,14 @@ export default function FlightsCommand({logger}: Props) {
 				return;
 			}
 
-			const apiOpts = logger ? {logger} : {};
+			const apiOpts = {
+				...(logger ? {logger} : {}),
+				...(filter === 'upcoming'
+					? {active: true}
+					: filter === 'past'
+					? {active: false}
+					: {}),
+			};
 			const res = await listFlights(
 				store.device,
 				store.session.customerId,
@@ -55,7 +71,7 @@ export default function FlightsCommand({logger}: Props) {
 			}
 			setStage({kind: 'error', message: res.message});
 		})();
-	}, [logger]);
+	}, [logger, filter]);
 
 	useEffect(() => {
 		if (stage.kind === 'loading') return;
@@ -140,16 +156,35 @@ function BookingCard({booking}: {booking: FlightBooking}) {
 	);
 }
 
-function LegLine({leg}: {leg: {origin: string; destination: string; flightNumber: string; departLocal: string; arriveLocal: string; checkInOpenUtc: string; checkInCloseUtc: string}}) {
+function LegLine({
+	leg,
+}: {
+	leg: {
+		origin: string;
+		destination: string;
+		flightNumber: string;
+		departLocal: string;
+		arriveLocal: string;
+		checkInOpenUtc: string;
+		checkInCloseUtc: string;
+	};
+}) {
 	return (
 		<Box flexDirection="column" marginLeft={2}>
 			<Text>
-				<Text color="white">{leg.flightNumber}</Text>{'  '}
-				<Text>{leg.origin} → {leg.destination}</Text>{'  '}
-				<Text dimColor>{formatLocal(leg.departLocal)} → {formatLocal(leg.arriveLocal)}</Text>
+				<Text color="white">{leg.flightNumber}</Text>
+				{'  '}
+				<Text>
+					{leg.origin} → {leg.destination}
+				</Text>
+				{'  '}
+				<Text dimColor>
+					{formatLocal(leg.departLocal)} → {formatLocal(leg.arriveLocal)}
+				</Text>
 			</Text>
 			<Text dimColor>
-				  check-in: {formatUtc(leg.checkInOpenUtc)} → {formatUtc(leg.checkInCloseUtc)} UTC
+				check-in: {formatUtc(leg.checkInOpenUtc)} →{' '}
+				{formatUtc(leg.checkInCloseUtc)} UTC
 			</Text>
 		</Box>
 	);
@@ -158,12 +193,29 @@ function LegLine({leg}: {leg: {origin: string; destination: string; flightNumber
 function formatLocal(iso: string): string {
 	// Keep the airport-local time + offset, just trim seconds for readability.
 	// "2026-04-29T20:30:00+02:00" -> "Wed 29 Apr 20:30 (+02:00)"
-	const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}(?:\.\d+)?([+-]\d{2}:?\d{2}|Z)?$/);
+	const m = iso.match(
+		/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):\d{2}(?:\.\d+)?([+-]\d{2}:?\d{2}|Z)?$/,
+	);
 	if (!m) return iso;
 	const [, year, month, day, hour, minute, offset] = m;
 	const date = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
-	const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][date.getUTCDay()];
-	const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(month) - 1];
+	const dow = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][
+		date.getUTCDay()
+	];
+	const monthName = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec',
+	][Number(month) - 1];
 	const off = offset && offset !== 'Z' ? ` ${offset}` : '';
 	return `${dow} ${day} ${monthName} ${hour}:${minute}${off}`;
 }
@@ -172,6 +224,19 @@ function formatUtc(iso: string): string {
 	const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
 	if (!m) return iso;
 	const [, , month, day, hour, minute] = m;
-	const monthName = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][Number(month) - 1];
+	const monthName = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec',
+	][Number(month) - 1];
 	return `${day} ${monthName} ${hour}:${minute}`;
 }

@@ -72,7 +72,9 @@ export default function LoginCommand({logger}: Props) {
 			setPassword('');
 			setStage({
 				kind: 'error',
-				message: `Wrong password${res.remaining ? ` (${res.remaining} attempts left)` : ''}.`,
+				message: `Wrong password${
+					res.remaining ? ` (${res.remaining} attempts left)` : ''
+				}.`,
 				recoverable: true,
 			});
 			return;
@@ -145,7 +147,8 @@ export default function LoginCommand({logger}: Props) {
 			{stage.kind === 'mfa' && (
 				<Box flexDirection="column">
 					<Text dimColor>
-						This device is not recognised. Check your email for a verification code.
+						This device is not recognised. Check your email for a verification
+						code.
 					</Text>
 					<Box>
 						<Text>Code: </Text>
@@ -168,12 +171,20 @@ export default function LoginCommand({logger}: Props) {
 					{stage.recoverable ? (
 						<Box>
 							<Text dimColor>Press enter to retry password.</Text>
-							<TextInput value="" onChange={() => undefined} onSubmit={onErrorRetry} />
+							<TextInput
+								value=""
+								onChange={() => undefined}
+								onSubmit={onErrorRetry}
+							/>
 						</Box>
 					) : (
 						<Box>
 							<Text dimColor>Press enter to exit.</Text>
-							<TextInput value="" onChange={() => undefined} onSubmit={onErrorRetry} />
+							<TextInput
+								value=""
+								onChange={() => undefined}
+								onSubmit={onErrorRetry}
+							/>
 						</Box>
 					)}
 				</Box>
@@ -181,7 +192,8 @@ export default function LoginCommand({logger}: Props) {
 
 			{stage.kind === 'done' && (
 				<Text color="green">
-					Signed in as {stage.email} (customer {stage.customerId}). Session saved.
+					Signed in as {stage.email} (customer {stage.customerId}). Session
+					saved.
 				</Text>
 			)}
 		</Box>

@@ -1,5 +1,11 @@
 import {randomUUID} from 'node:crypto';
-import {apiFetch, HOSTS, readJson, type ClientOptions, type Logger} from './client.js';
+import {
+	apiFetch,
+	HOSTS,
+	readJson,
+	type ClientOptions,
+	type Logger,
+} from './client.js';
 import type {
 	ApiErrorBody,
 	LoginOk,
@@ -66,7 +72,9 @@ export async function login(
 	);
 
 	if (res.status === 200) {
-		const body = await readJson<LoginOk & {customerId: string; token: string}>(res);
+		const body = await readJson<LoginOk & {customerId: string; token: string}>(
+			res,
+		);
 		if (!body?.customerId || !body.token) {
 			reportUnexpected(
 				options.logger,
@@ -99,14 +107,21 @@ export async function login(
 	}
 
 	if (res.status === 401 && body?.code === 'Password.Wrong') {
-		const remaining = findAdditional(body, 'Account.Password.TryCount.Remaining');
-		return remaining ? {status: 'wrongPassword', remaining} : {status: 'wrongPassword'};
+		const remaining = findAdditional(
+			body,
+			'Account.Password.TryCount.Remaining',
+		);
+		return remaining
+			? {status: 'wrongPassword', remaining}
+			: {status: 'wrongPassword'};
 	}
 
 	reportUnexpected(
 		options.logger,
 		'login',
-		`unrecognised response (status=${res.status}, code=${body?.code ?? '<none>'})`,
+		`unrecognised response (status=${res.status}, code=${
+			body?.code ?? '<none>'
+		})`,
 		res.status,
 		body,
 	);
@@ -184,7 +199,9 @@ export async function fetchRememberMeToken(
 	options: Omit<ClientOptions, 'device' | 'authToken'> = {},
 ): Promise<string | undefined> {
 	const res = await apiFetch(
-		`${HOSTS.usrprof}/usrprof/v2/accounts/${encodeURIComponent(customerId)}/rememberMeToken`,
+		`${HOSTS.usrprof}/usrprof/v2/accounts/${encodeURIComponent(
+			customerId,
+		)}/rememberMeToken`,
 		{method: 'GET'},
 		{...options, device, authToken},
 	);

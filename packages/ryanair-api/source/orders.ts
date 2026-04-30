@@ -1,4 +1,10 @@
-import {apiFetch, HOSTS, readJson, type ClientOptions, type Logger} from './client.js';
+import {
+	apiFetch,
+	HOSTS,
+	readJson,
+	type ClientOptions,
+	type Logger,
+} from './client.js';
 import type {ApiErrorBody, Device} from './types.js';
 
 /** Single leg of a flight (we collapse rawBooking.flights[].times into this). */
@@ -239,16 +245,35 @@ function normaliseBooking(
  * The wire response is rich and chatty; this function flattens it to a stable
  * shape so the UI doesn't need to know the JSON layout.
  */
+export type ListFlightsOptions = Omit<ClientOptions, 'device' | 'authToken'> & {
+	/**
+	 * Server-side `active` filter.
+	 * - `true` (default): only upcoming/in-progress bookings (matches the app's
+	 *   "Trips" tab).
+	 * - `false`: only past/cancelled bookings.
+	 * - `undefined`: omit the parameter entirely — let the server decide what
+	 *   counts as the full set.
+	 */
+	active?: boolean;
+};
+
 export async function listFlights(
 	device: Device,
 	customerId: string,
 	authToken: string,
-	options: Omit<ClientOptions, 'device' | 'authToken'> = {},
+	options: ListFlightsOptions = {active: true},
 ): Promise<ListFlightsResult> {
+	const params = new URLSearchParams({type: 'flight'});
+	if (options.active !== undefined)
+		params.set('active', String(options.active));
 	const url =
 		`${HOSTS.usrprof}/orders/v2/orders/${encodeURIComponent(customerId)}` +
-		`/details?type=flight&active=true`;
-	const res = await apiFetch(url, {method: 'GET'}, {...options, device, authToken});
+		`/details?${params.toString()}`;
+	const res = await apiFetch(
+		url,
+		{method: 'GET'},
+		{...options, device, authToken},
+	);
 
 	if (res.status === 401) {
 		return {status: 'unauthorized'};
@@ -259,7 +284,9 @@ export async function listFlights(
 		options.logger?.({
 			kind: 'unexpected',
 			operation: 'listFlights',
-			reason: `non-200 response (status=${res.status}, code=${body?.code ?? '<none>'})`,
+			reason: `non-200 response (status=${res.status}, code=${
+				body?.code ?? '<none>'
+			})`,
 			httpStatus: res.status,
 			responseBody: body,
 		});
@@ -297,7 +324,10 @@ export async function listFlights(
 }
 
 /** Convenience: a passenger is checked in on every leg if no checkin row says "nocheckin". */
-export function isPassengerCheckedIn(booking: FlightBooking, paxNum: number): boolean {
+export function isPassengerCheckedIn(
+	booking: FlightBooking,
+	paxNum: number,
+): boolean {
 	const rows = booking.checkins.filter(c => c.paxNum === paxNum);
 	if (rows.length === 0) return false;
 	return rows.every(r => r.status !== 'nocheckin');

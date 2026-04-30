@@ -126,15 +126,16 @@ export async function getBoardingPasses(
 	) {
 		return {
 			status: 'notFound',
-			message:
-				body?.message ?? 'No boarding pass issued yet — check in first.',
+			message: body?.message ?? 'No boarding pass issued yet — check in first.',
 		};
 	}
 
 	options.logger?.({
 		kind: 'unexpected',
 		operation: 'getBoardingPasses',
-		reason: `non-200 response (status=${res.status}, code=${body?.code ?? '<none>'})`,
+		reason: `non-200 response (status=${res.status}, code=${
+			body?.code ?? '<none>'
+		})`,
 		httpStatus: res.status,
 		responseBody: body,
 	});

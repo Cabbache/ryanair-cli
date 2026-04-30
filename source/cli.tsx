@@ -14,10 +14,12 @@ const cli = meow(
 
 	Commands
 	  login                  Sign in and store the session locally
-	  flights                List your active (upcoming) flights
+	  flights                List your bookings (default: upcoming only)
 	  boardingpass <PNR>     Render boarding pass(es) (Aztec) for a booking
 
 	Options
+	  --past   (flights) Show past/cancelled bookings only.
+	  --all    (flights) Show every booking (omits the active filter).
 	  --debug  Log every request/response to stderr (one JSON line each).
 	           Without --debug, only "unexpected" events (signs the API
 	           may have changed) are logged.
@@ -25,6 +27,8 @@ const cli = meow(
 	Examples
 	  $ ryanair-cli login
 	  $ ryanair-cli flights
+	  $ ryanair-cli flights --past
+	  $ ryanair-cli flights --all
 	  $ ryanair-cli boardingpass XXXXXX
 	  $ ryanair-cli boardingpass XXXXXX --debug 2> debug.log
 `,
@@ -32,6 +36,14 @@ const cli = meow(
 		importMeta: import.meta,
 		flags: {
 			debug: {
+				type: 'boolean',
+				default: false,
+			},
+			all: {
+				type: 'boolean',
+				default: false,
+			},
+			past: {
 				type: 'boolean',
 				default: false,
 			},
@@ -55,7 +67,12 @@ switch (cmd) {
 	}
 
 	case 'flights': {
-		render(<FlightsCommand logger={logger} />);
+		const filter: 'upcoming' | 'past' | 'all' = cli.flags.all
+			? 'all'
+			: cli.flags.past
+			? 'past'
+			: 'upcoming';
+		render(<FlightsCommand logger={logger} filter={filter} />);
 		break;
 	}
 
@@ -64,7 +81,8 @@ switch (cmd) {
 		if (!pnr) {
 			render(
 				<Text>
-					Missing PNR. Usage: <Text bold>ryanair-cli boardingpass &lt;PNR&gt;</Text>
+					Missing PNR. Usage:{' '}
+					<Text bold>ryanair-cli boardingpass &lt;PNR&gt;</Text>
 				</Text>,
 			);
 			process.exitCode = 1;
